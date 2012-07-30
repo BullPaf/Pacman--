@@ -1,4 +1,6 @@
 #include "levelmanager.hpp"
+#include <sstream>
+#include <fstream>
 
 /*Initialize le tableau du niveau
  * et les différentes variables*/
@@ -9,9 +11,6 @@ Level::Level()
 		for(int j=0; j<NB_BLOCKS_LARGEUR; j++)
 			map[i][j].type = RIEN;
 	}
-	/*for(int i=0; i<NB_MAX_GHOSTS; i++) ghost_start_x[i]=ghost_start_y[i]=-1;
-	dotsRemaining=0;
-	nb_ghosts=0;*/
 }
 
 Level::~Level() {}
@@ -19,27 +18,136 @@ Level::~Level() {}
 LevelManager::LevelManager()
 {
 	std::string img;
+	std::ostringstream num;
 	for (int i=0; i<NB_WALL_BLOCKS; i++)
 	{
-		img = "image/level/" + ToString(i) + ".png";
-		wall_texture[i] = IMG_Load(img);
+		num<<i;
+		img = "image/level/" + num.str() + ".png";
+		wall_texture[i] = IMG_Load(img.c_str());
 	}
-	for (i=0; i<NB_BONUS_BLOCKS; i++)
+	for (int i=0; i<NB_BONUS_BLOCKS; i++)
 	{
-		img = "image/bonus/" + ToString(i) + ".png";
-		bonus_texture[i] = IMG_Load(img);
+		num<<i;
+		img = "image/bonus/" + num.str() + ".png";
+		bonus_texture[i] = IMG_Load(img.c_str());
 	}
-	for (i=0; i<NB_PACMAN_BLOCK; i++)
+	for (int i=0; i<NB_PACMAN_BLOCK; i++)
 	{
-		img = "image/pacman/" + ToString(i*2) + ".png";
-		pacman_texture[i] = IMG_Load(img);
+		num<<i*2;
+		img = "image/pacman/" + num.str() + ".png";
+		pacman_texture[i] = IMG_Load(img.c_str());
 	}
-	for (i=0; i<NB_GHOST_BLOCKS; i++)
+	for (int i=0; i<NB_GHOST_BLOCKS; i++)
 	{
-		img = "image/ghosts/" + ToString(i*8) + ".png";
-		ghosts_texture[i] = IMG_Load(img);
+		num<<i*8;
+		img = "image/ghosts/" + num.str() + ".png";
+		ghosts_texture[i] = IMG_Load(img.c_str());
 	}
 }
+
+LevelManager::~LevelManager()
+{
+	for (int i=0; i<NB_WALL_BLOCKS; i++)
+		free(wall_texture[i]);
+	for (int i=0; i<NB_BONUS_BLOCKS; i++)
+		free(bonus_texture[i]);
+	for (int i=0; i<NB_PACMAN_BLOCK; i++)
+		free(pacman_texture[i]);
+	for (int i=0; i<NB_GHOST_BLOCKS; i++)
+		free(ghosts_texture[i]);
+}
+
+/*
+ * Lit un fichier et extrait les valeurs
+ * pour affecter le tableau LEVEL
+*/
+void LevelManager::load_level(int level, Level &mylevel)
+{
+	mylevel.set_NbGhosts(0);
+	int line=0;
+	std::string chaine;
+	std::string myfile = LEVEL_PATH + level_filename[level];
+	std::ifstream level_file(myfile.c_str());
+
+	if (level_file)
+	{
+		//Lit le fichier ligne par ligne et s'assure qu'on ne lit pas trop de ligne
+		while (getline(level_file, chaine) && line < NB_BLOCKS_HAUTEUR)
+		{
+			extract_val(chaine.c_str(), line, mylevel); //Recupere les valeurs dans la ligne
+			line++;
+		}
+		level_file.close();
+	}
+	else
+	{
+		std::cerr << "Error while opening Level file... Bye!" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+/*
+ * Lit le tableau LEVEL est sauvegarde
+ * le niveau dans un fichier
+*/
+void LevelManager::save_level(int level, Level &mylevel)
+{
+	std::string myfile = LEVEL_PATH+level_filename[level];
+	std::ofstream level_file(myfile.c_str());
+	for(int i=0; i<NB_BLOCKS_HAUTEUR; i++)
+	{
+		for(int j=0; j<NB_BLOCKS_LARGEUR; j++)
+		{
+			if(mylevel.get_BlockType(i,j)==MUR) level_file << "1:" << mylevel.get_EltType(i,j) << " ";
+			else if(mylevel.get_BlockType(i,j)==PACMAN) level_file << "3:" << mylevel.get_EltType(i,j) << " ";
+			else if(mylevel.get_BlockType(i,j)==GHOST) level_file << "4:" << mylevel.get_EltType(i,j) << " ";
+			else if(mylevel.get_BlockType(i,j)==BONUS) level_file << "2:" << mylevel.get_EltType(i,j) << " ";
+			else level_file << "0 ";
+		}
+		level_file << std::endl;
+	}
+	level_file.close();
+}
+
+/*Sauve juste le numéro du niveau actuel pour le moment*/
+void LevelManager::save_game(int cur_level)
+{
+	std::ofstream save_file("save/save.txt");
+	if (save_file)
+	{
+		save_file << cur_level;
+		save_file.close();
+	}
+	else std::cerr << "Error while saving game..." << std::endl;
+}
+
+/*Charge le dernier niveau sauvegardé*/
+int LevelManager::load_game()
+{
+	int level;
+	std::ifstream save_file("save/save.txt");
+	if (save_file)
+	{
+		save_file >> level;
+		save_file.close();
+		return level;
+	}
+	else std::cerr << "No game saved..." << std::endl;
+	return -1;
+}
+
+/*Si une sauvegarde existe*/
+bool LevelManager::has_saved_game()
+{
+	std::ofstream save_file("save/save.txt");
+	if (save_file)
+	{
+		save_file.close();
+		return true;
+	}
+	else return false;
+}
+
 /* Cette méthode récupere les valeurs
  * séparées par des espaces dans le string s
  * et affecte cette valeur à la case du niveau
@@ -47,11 +155,12 @@ LevelManager::LevelManager()
  * Tres moche mais ca marche alors pas touche!
  * Tres sensible au format du fichier!
 */
-void extract_val(char *s, int line)
+void LevelManager::extract_val(const char *s, int line, Level &mylevel)
 {
 	char nb[3], type;
 	nb[0]='0'; nb[1]='0'; nb[2]='\0';
-	int nb_val=0,i=0,j=0,ghost=0;
+	int nb_val=0, i=0, j=0, nghosts=0;
+	Couleur ghost=ROUGE;
 	while(nb_val < NB_BLOCKS_LARGEUR) //Tant qu'on a pas lu autant de valeur qu'il n'y a de case pour le niveau
 	{
 		if(s[i] != ' ') //Si ce n'est pas espace on conserve le caractere lu
@@ -59,12 +168,12 @@ void extract_val(char *s, int line)
 			type = s[i];
 			if(type == '0') //CASE VIDE
 			{
-				LEVEL[line][nb_val].type = RIEN;
+				mylevel.set_BlockType(line, nb_val, RIEN);
 				i++;
 			}
 			else if(type=='1') //MUR
 			{
-				LEVEL[line][nb_val].type = MUR;
+				mylevel.set_BlockType(line, nb_val, MUR);
 				i+=2; //On saute les ':'
 				while(s[i] != ' ') //tant qu'on a pas d'espace on lit le type de bloc
 				{
@@ -76,12 +185,12 @@ void extract_val(char *s, int line)
 					nb[1]=nb[0];
 					nb[0]='0';
 				}
-				LEVEL[line][nb_val].elt_type=atoi(nb);
+				mylevel.set_EltType(line, nb_val, atoi(nb));
 				i++; j=0;
 			}
 			else if(type=='2') //BONUS
 			{
-				LEVEL[line][nb_val].type = BONUS;
+				mylevel.set_BlockType(line, nb_val, BONUS);
 				i+=2; //On saute les ':'
 				while(s[i] != ' ') //Délimiteur type de bonus
 				{
@@ -93,42 +202,52 @@ void extract_val(char *s, int line)
 					nb[1]=nb[0];
 					nb[0]='0';
 				}
-				LEVEL[line][nb_val].elt_type=atoi(nb);
-				if(atoi(nb) == 9) POINTS++; //Si c'est un point on incremente le nombre de POINTS
+				mylevel.set_EltType(line, nb_val, atoi(nb));
+				if(atoi(nb) == 9)
+				{
+					int dots = mylevel.get_Dots();
+					mylevel.set_Dots(++dots); //Si c'est un point on incremente le nombre de POINTS
+				}
 				i++; j=0;
 			}
 			else if(type=='3') //PACMAN
 			{
 				i+=2;
-				LEVEL[line][nb_val].type = PACMAN;
-				PAC_START_X=nb_val;
-				PAC_START_Y=line;
-				if(s[i]=='0') PAC_START_DIRECTION = HAUT;
-				else if(s[i]=='1') PAC_START_DIRECTION = DROITE;
-				else if(s[i]=='2') PAC_START_DIRECTION = BAS;
-				else if(s[i]=='3') PAC_START_DIRECTION = GAUCHE;
-				LEVEL[line][nb_val].elt_type=PAC_START_DIRECTION;
+				mylevel.set_BlockType(line, nb_val, PACMAN);
+				mylevel.set_PacStartX(nb_val);
+				mylevel.set_PacStartY(line);
+				if(s[i]=='0') mylevel.set_PacStartDir(HAUT);
+				else if(s[i]=='1') mylevel.set_PacStartDir(DROITE);
+				else if(s[i]=='2') mylevel.set_PacStartDir(BAS);
+				else if(s[i]=='3') mylevel.set_PacStartDir(GAUCHE);
+				mylevel.set_EltType(line, nb_val, mylevel.get_PacStartDir());
 				i++;
 			}
 			else if(type=='4') //GHOSTS
 			{
 				i+=2;
-				if(NB_GHOST < NB_MAX_GHOSTS) NB_GHOST++;
+				nghosts = mylevel.get_NbGhosts();
+				if(nghosts < NB_MAX_GHOSTS) mylevel.set_NbGhosts(++nghosts);
 				else
 				{
-					fprintf(stderr, "Fatal Error: Too much ghosts!\n");
+					std::cerr << "Fatal Error: Too much ghosts!" << std::endl;
 					exit(EXIT_FAILURE);
 				}
-				LEVEL[line][nb_val].type = GHOST;
+				mylevel.set_BlockType(line, nb_val, GHOST);
 				if(s[i]=='0') ghost=ROUGE;
 				else if(s[i]=='1') ghost=VIOLET;
 				else if(s[i]=='2') ghost=BLEU;
 				else if(s[i]=='3') ghost=JAUNE;
-				GHOST_START_X[NB_GHOST-1]=nb_val;
-				GHOST_START_Y[NB_GHOST-1]=line;
-				GHOST_COULEUR[NB_GHOST-1]=ghost;
-				LEVEL[line][nb_val].elt_type=ghost;
+				mylevel.set_GhostStartX(nghosts-1, nb_val);
+				mylevel.set_GhostStartX(nghosts-1, line);
+				mylevel.set_GhostColor(nghosts-1, ghost);
+				mylevel.set_EltType(line, nb_val, ghost);
 				i++; 
+			}
+			else
+			{
+				std::cerr <<  "Bad data while loading level..." << std::endl;
+				exit(EXIT_FAILURE);
 			}
 			nb_val ++;
 		}
@@ -136,49 +255,47 @@ void extract_val(char *s, int line)
 	}
 	if (nb_val != NB_BLOCKS_LARGEUR)
 	{
-		fprintf(stderr, "Error, file level not correctly formated: Expected %d values, only %d values were read\n", NB_BLOCKS_LARGEUR, nb_val);
+		std::cerr << "Error, file level not correctly formated: Expected " << NB_BLOCKS_LARGEUR << " values, only " << nb_val << " values were read" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
 
-//Affiche une case... ^^
-void affiche_une_case(CASE c, SDL_Rect *pos, SDL_Surface *s)
-{
-	if(c.type==MUR) SDL_BlitSurface(BLOCK_MUR[c.elt_type], NULL, s, pos);
-	else if(c.type==BONUS) SDL_BlitSurface(BLOCK_BONUS[c.elt_type], NULL, s, pos);
-	else if(c.type==PACMAN) SDL_BlitSurface(BLOCK_PACMAN[c.elt_type], NULL, s, pos);
-	else if(c.type==GHOST) SDL_BlitSurface(BLOCK_GHOST[c.elt_type], NULL, s, pos);
-}
-
 /*Dessine le niveau à l'écran*/
-void draw_level()
+void LevelManager::draw_level(Level &mylevel, Graphics &graph)
 {
-	int i,j;
-	POINT p1, p2;
-	SDL_Rect position;
-	for(i=0; i<NB_BLOCKS_HAUTEUR; i++)
+	SDL_Rect position, p1, p2;
+	for(int i=0; i<NB_BLOCKS_HAUTEUR; i++)
 	{
 		position.y=i*BLOCK_SIZE;
-		for(j=0; j<NB_BLOCKS_LARGEUR; j++)
+		for(int j=0; j<NB_BLOCKS_LARGEUR; j++)
 		{
 			position.x=j*BLOCK_SIZE;
-			affiche_une_case(LEVEL[i][j], &position, screen);
+			affiche_une_case(mylevel.get_Case(i,j), &position, graph.get_Screen());
 		}
 	}
 	p1.x=p2.x=WIDTH; p1.y=HEIGHT-1; p2.y=0;
-	draw_line(p1, p2, blanc, screen);
+	graph.draw_line(p1, p2, blanc, graph.get_Screen());
+}
+
+//Affiche une case... ^^
+void LevelManager::affiche_une_case(Case c, SDL_Rect *pos, SDL_Surface *s)
+{
+	if(c.type==MUR) SDL_BlitSurface(wall_texture[c.elt_type], NULL, s, pos);
+	else if(c.type==BONUS) SDL_BlitSurface(bonus_texture[c.elt_type], NULL, s, pos);
+	else if(c.type==PACMAN) SDL_BlitSurface(pacman_texture[c.elt_type], NULL, s, pos);
+	else if(c.type==GHOST) SDL_BlitSurface(ghosts_texture[c.elt_type], NULL, s, pos);
 }
 
 //Si on est pile dans une case
-int dans_case(SDL_Rect pos)
+/*int dans_case(SDL_Rect pos)
 {
 	if( (pos.x % BLOCK_SIZE==0) && (pos.y % BLOCK_SIZE==0) ) return 1;
 	else return 0;
-}
+}*/
 
 /*Renvoie les index de case en fonction de la position
  * et de la direction*/
-SDL_Rect get_case(SDL_Rect position, int direction)
+/*SDL_Rect get_case(SDL_Rect position, int direction)
 {
 	SDL_Rect pos;
 	switch(direction)
@@ -197,45 +314,49 @@ SDL_Rect get_case(SDL_Rect position, int direction)
 			break;
 	}
 	return pos;
-}
+}*/
 
 /*Quand un bloc est supprimé durant la partie
  * modifie les blocs alentours pour conserver
  * une cohérence dans l'agencement des murs*/
-void remove_bloc(int y, int x)
+void LevelManager::remove_bloc(int y, int x, Level &mylevel)
 {
-	LEVEL[y][x].type=RIEN;
-	switch(LEVEL[y][x].elt_type)
+	mylevel.set_BlockType(y, x, RIEN);//LEVEL[y][x].type=RIEN;
+	switch(mylevel.get_EltType(y, x))
 	{
 		case 14:
-			if(x && LEVEL[y][x-1].type==MUR) LEVEL[y][x-1].elt_type = remove_right_bloc(LEVEL[y][x-1].elt_type);
-			if(x<NB_BLOCKS_LARGEUR && LEVEL[y][x+1].type==MUR)
-				LEVEL[y][x+1].elt_type = remove_left_bloc(LEVEL[y][x+1].elt_type);
+			if(x && mylevel.get_BlockType(y,x-1)==MUR)
+				mylevel.set_EltType(y, x-1, remove_right_bloc(mylevel.get_EltType(y,x-1)));
+			if(x < NB_BLOCKS_LARGEUR && mylevel.get_BlockType(y,x+1)==MUR)
+				mylevel.set_EltType(y, x+1, remove_left_bloc(mylevel.get_EltType(y,x+1)));
 			break;
 		case 15:
-			if(y && LEVEL[y-1][x].type==MUR) LEVEL[y-1][x].elt_type = remove_down_bloc(LEVEL[y-1][x].elt_type);
-			if(y<NB_BLOCKS_HAUTEUR && LEVEL[y+1][x].type==MUR)
-				LEVEL[y+1][x].elt_type = remove_up_bloc(LEVEL[y+1][x].elt_type);
+			if(y && mylevel.get_BlockType(y-1,x)==MUR)
+				mylevel.set_EltType(y-1, x, remove_down_bloc(mylevel.get_EltType(y-1,x)));
+			if(y < NB_BLOCKS_HAUTEUR && mylevel.get_BlockType(y+1,x)==MUR)
+				mylevel.set_EltType(y+1, x, remove_up_bloc(mylevel.get_EltType(y+1,x)));
 			break;
 		case 16:
-			if(y<NB_BLOCKS_HAUTEUR && LEVEL[y+1][x].type==MUR)
-				LEVEL[y+1][x].elt_type = remove_up_bloc(LEVEL[y+1][x].elt_type);
+			if(y<NB_BLOCKS_HAUTEUR && mylevel.get_BlockType(y+1,x)==MUR)
+				mylevel.set_EltType(y+1, x, remove_up_bloc(mylevel.get_EltType(y+1,x)));
 			break;
 		case 17:
-			if(x && LEVEL[y][x-1].type==MUR) LEVEL[y][x-1].elt_type = remove_right_bloc(LEVEL[y][x-1].elt_type);
+			if(x && mylevel.get_BlockType(y,x-1)==MUR)
+				mylevel.set_EltType(y, x-1, remove_right_bloc(mylevel.get_EltType(y,x-1)));
 			break;
 		case 18:
-			if(y && LEVEL[y-1][x].type==MUR) LEVEL[y-1][x].elt_type = remove_down_bloc(LEVEL[y-1][x].elt_type);
+			if(y && mylevel.get_BlockType(y-1,x)==MUR)
+				mylevel.set_EltType(y-1, x, remove_down_bloc(mylevel.get_EltType(y-1,x)));
 			break;
 		case 19:
-			if(x<NB_BLOCKS_LARGEUR && LEVEL[y][x+1].type==MUR)
-				LEVEL[y][x+1].elt_type = remove_left_bloc(LEVEL[y][x+1].elt_type);
+			if(x<NB_BLOCKS_LARGEUR && mylevel.get_BlockType(y,x+1)==MUR)
+				mylevel.set_EltType(y, x+1, remove_left_bloc(mylevel.get_EltType(y,x+1)));
 			break;
 	}
 }
 
 /*********Fonctions de remplacement des blocs**************/
-int remove_right_bloc(int elt)
+int LevelManager::remove_right_bloc(int elt)
 {
 	if(elt==0) return 11;
 	else if(elt==3) return 10;
@@ -247,7 +368,7 @@ int remove_right_bloc(int elt)
 	else return elt;
 }
 
-int remove_left_bloc(int elt)
+int LevelManager::remove_left_bloc(int elt)
 {
 	if(elt==0) return 13;
 	else if(elt==2) return 12;
@@ -259,7 +380,7 @@ int remove_left_bloc(int elt)
 	else return elt;
 }
 
-int remove_up_bloc(int elt)
+int LevelManager::remove_up_bloc(int elt)
 {
 	if(elt==1) return 10;
 	else if(elt==2) return 11;
@@ -271,7 +392,7 @@ int remove_up_bloc(int elt)
 	else return elt;
 }
 
-int remove_down_bloc(int elt)
+int LevelManager::remove_down_bloc(int elt)
 {
 	if(elt==1) return 12;
 	else if(elt==3) return 13;
@@ -283,106 +404,3 @@ int remove_down_bloc(int elt)
 	else return elt;
 }
 /*******************FIN Fonctions de remplacement de blocs*********************/
-
-/*
- * Lit un fichier et extrait les valeurs
- * pour affecter le tableau LEVEL
-*/
-void LevelManager::load_level(int level, Level& mylevel)
-{
-	mylevel.set_NbGhosts(0);
-	std::string myfile = LEVEL_PATH + level_filename[level];
-	FILE *level_file = fopen(myfile, "r");
-	char chaine[LINE_SIZE];
-	int line=0;
-	if (level_file != NULL)
-	{
-		//Lit le fichier ligne par ligne et s'assure qu'on ne lit pas trop de ligne
-		while (fgets(chaine, LINE_SIZE, level_file) != NULL && line < NB_BLOCKS_HAUTEUR)
-		{
-			extract_val(chaine, line); //Recupere les valeurs dans la ligne
-			line++;
-		}
-		fclose(level_file);
-	}
-	else
-	{
-		fprintf(stderr, "Error while opening Level file... Bye!\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-/*Sauve juste le numéro du niveau actuel pour le moment*/
-void save_game(int cur_level)
-{
-	FILE *save_file = fopen("save/save.txt", "w+");
-	if (save_file != NULL)
-	{
-		fprintf(save_file, "%d", cur_level);
-		fclose(save_file);
-	}
-	else fprintf(stderr, "Error while saving game...\n");
-}
-
-/*Charge le dernier niveau sauvegardé*/
-int load_game()
-{
-	int level;
-	FILE *save_file = fopen("save/save.txt", "r");
-	if (save_file != NULL)
-	{
-		if(fscanf(save_file, "%d", &level)==EOF) return -1;
-	}
-	else fprintf(stderr, "No game saved...\n");
-	return level;
-}
-
-/*Si une sauvegarde existe*/
-int has_saved_game()
-{
-	FILE *save_file = fopen("save/save.txt", "r");
-	if (save_file != NULL)
-	{
-		fclose(save_file);
-		return 1;
-	}
-	else return 0;
-}
-
-/*
- * Lit le tableau LEVEL est sauvegarde
- * le niveau dans un fichier
-*/
-void save_level(int level)
-{
-	int i,j;
-	char myfile[64];
-	sprintf(myfile, "%s%s", LEVEL_PATH, LEVEL_FILE[level]);
-	FILE *level_file = fopen(myfile, "w+");
-	for(i=0; i<NB_BLOCKS_HAUTEUR; i++)
-	{
-		for(j=0; j<NB_BLOCKS_LARGEUR; j++)
-		{
-			if(LEVEL[i][j].type==MUR) fprintf(level_file, "1:%d ", LEVEL[i][j].elt_type);
-			else if(LEVEL[i][j].type==PACMAN) fprintf(level_file, "3:%d ", LEVEL[i][j].elt_type);
-			else if(LEVEL[i][j].type==GHOST) fprintf(level_file, "4:%d ", LEVEL[i][j].elt_type);
-			else if(LEVEL[i][j].type==BONUS) fprintf(level_file, "2:%d ", LEVEL[i][j].elt_type);
-			else fputs("0 ", level_file);
-		}
-		fputc('\n', level_file);
-	}
-	fclose(level_file);
-}
-
-void delete_blocks()
-{
-	int i;
-	for (i=0; i<NB_WALL_BLOCKS; i++)
-		free(BLOCK_MUR[i]);
-	for (i=0; i<NB_BONUS_BLOCKS; i++)
-		free(BLOCK_BONUS[i]);
-	for (i=0; i<NB_PACMAN_BLOCK; i++)
-		free(BLOCK_PACMAN[i]);
-	for (i=0; i<NB_GHOST_BLOCKS; i++)
-		free(BLOCK_GHOST[i]);
-}

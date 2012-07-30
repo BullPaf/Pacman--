@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <SDL.h>
-//#include <SDL_image.h>
+#include <SDL_image.h>
 #include <SDL/SDL_ttf.h>
 #include <string>
 #include <ctime>
@@ -30,6 +30,7 @@ class Graphics
 		void draw_cross(SDL_Rect const, int const, Uint16 const, SDL_Surface*); //dessine une croix
 		void aff_pol(std::string const, int const, SDL_Rect const, Uint16 const, SDL_Surface*); //Ecrit du texte à l'écran
 		int dans_ecran(int const, int const, SDL_Surface* const) const;
+		SDL_Surface* get_Screen() {return m_screen;}
 
 	private:
 		SDL_Surface* m_screen; //fenetre sur laquelle on dessine 

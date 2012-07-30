@@ -1,9 +1,9 @@
 #ifndef H_CONSTANTES
 #define H_CONSTANTES
 
-enum {HAUT, DROITE, BAS, GAUCHE};
+typedef enum DIRECTION {HAUT, DROITE, BAS, GAUCHE}DIRECTION;
 
-#define VERSION "0.5"
+#define VERSION "0.1"
 #define BLOCK_SIZE 20 //Taille d'un block
 #define NB_BLOCKS_LARGEUR 31 //Nombre de block en largeur
 #define NB_BLOCKS_HAUTEUR 31 //Nombre de block en hauteur
