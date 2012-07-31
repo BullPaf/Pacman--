@@ -11,6 +11,7 @@ Level::Level()
 		for(int j=0; j<NB_BLOCKS_LARGEUR; j++)
 			map[i][j].type = RIEN;
 	}
+	nb_ghosts=0;
 }
 
 Level::~Level() {}
@@ -23,25 +24,46 @@ LevelManager::LevelManager()
 	{
 		num<<i;
 		img = "image/level/" + num.str() + ".png";
-		wall_texture[i] = IMG_Load(img.c_str());
+		std::cerr << img.c_str() << std::endl;
+		if( (wall_texture[i] = IMG_Load(img.c_str())) == NULL)
+		{
+			std::cerr <<"Fatal Error..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		num.str("");
 	}
 	for (int i=0; i<NB_BONUS_BLOCKS; i++)
 	{
 		num<<i;
 		img = "image/bonus/" + num.str() + ".png";
-		bonus_texture[i] = IMG_Load(img.c_str());
+		if( (bonus_texture[i] = IMG_Load(img.c_str())) == NULL)
+		{
+			std::cerr <<"Fatal Error..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		num.str("");
 	}
 	for (int i=0; i<NB_PACMAN_BLOCK; i++)
 	{
 		num<<i*2;
 		img = "image/pacman/" + num.str() + ".png";
-		pacman_texture[i] = IMG_Load(img.c_str());
+		if( (pacman_texture[i] = IMG_Load(img.c_str())) == NULL)
+		{
+			std::cerr <<"Fatal Error..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		num.str("");
 	}
 	for (int i=0; i<NB_GHOST_BLOCKS; i++)
 	{
 		num<<i*8;
 		img = "image/ghosts/" + num.str() + ".png";
-		ghosts_texture[i] = IMG_Load(img.c_str());
+		if( (ghosts_texture[i] = IMG_Load(img.c_str())) == NULL)
+		{
+			std::cerr <<"Fatal Error..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		num.str("");
 	}
 }
 

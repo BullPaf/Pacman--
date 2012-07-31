@@ -12,6 +12,8 @@ class Input
 		int get_MouseY() {return mousey;}
 		int get_Quit() {return quit;}
 		int get_MouseButton(int b) {return mousebuttons[b];}
+		int get_Key(int k) {return key[k];}
+		void set_Key(int k, int val) {key[k] = val;}
 		//void print_key(string&, unsigned);
 
 	private:

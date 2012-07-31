@@ -36,7 +36,6 @@ Editor::~Editor() {}
 void Editor::editer(Graphics &graph)
 {
 	/****************Initialisation*********************/
-	//init_graphics(EDIT_WIDTH, EDIT_HEIGHT, "Editeur Pacman");
 	SDL_WM_SetCaption("Editeur Pacman", NULL);
 	SDL_ShowCursor(SDL_ENABLE);
 	SDL_WarpMouse(WIDTH / 2, EDIT_HEIGHT / 2);
@@ -48,10 +47,6 @@ void Editor::editer(Graphics &graph)
 	LevelManager lvlmng;
 	Level mylevel;
 	Input in;
-	//init_blocks();
-	//init_editor();
-	//init_level();
-	//memset(&in,0,sizeof(in));
 	/*****************Fin Initialisation*****************/
 
 	while(ok)
@@ -180,34 +175,6 @@ void Editor::plot_object(int x, int y, int type, Level &mylevel)
 	mylevel.set_Case(y/BLOCK_SIZE, x/BLOCK_SIZE, editor[type]);
 }
 
-/*void init_editor()
-{
-	int i, j;
-	for(i=0; i<NB_WALL_BLOCKS; i++)
-	{
-		editor[i].type=MUR;
-		editor[i].elt_type=i;
-	}
-	for(j=0; j<NB_BONUS_BLOCKS; j++)
-	{
-		editor[i].type=BONUS;
-		editor[i].elt_type=j;
-		i++;
-	}
-	for(j=0; j<NB_PACMAN_BLOCK; j++)
-	{
-		editor[i].type=PACMAN;
-		editor[i].elt_type=j;
-		i++;
-	}
-	for(j=0; j<NB_GHOST_BLOCKS; j++)
-	{
-		editor[i].type=GHOST;
-		editor[i].elt_type=j;
-		i++;
-	}
-}*/
-
 /*Affiche des messages dans le menu de droite*/
 /*void print_info(int *message, int tempsPrecedent, POINT p, int level)
 {
@@ -247,22 +214,22 @@ void Editor::plot_object(int x, int y, int type, Level &mylevel)
 void Editor::load_gui(Graphics &graph, LevelManager &lvlmng)
 {
 	SDL_Rect position, p1, p2;
-	int i, nb_col = 5, nb_ligne=(NB_ALL_BLOCKS-1)/nb_col + 1;
+	int nb_col = 5, nb_ligne=(NB_ALL_BLOCKS-1)/nb_col + 1;
 	p1.x=p2.x=WIDTH; p1.y=HEIGHT-1; p2.y=0;
 	graph.draw_line(p1, p2, blanc, graph.get_Screen());
 	p2.x=WIDTH+nb_col*(BLOCK_SIZE+3);
-	for(i=0; i<=nb_ligne; i++)
+	for(int i=0; i<=nb_ligne; i++)
 	{
 		p1.y=p2.y=HEIGHT-(1+i*(BLOCK_SIZE+3));
 		graph.draw_line(p1, p2, blanc, graph.get_Screen());
 	}
 	p1.y=HEIGHT-1;
-	for(i=0; i<=nb_col; i++)
+	for(int i=0; i<=nb_col; i++)
 	{
 		p1.x=p2.x=WIDTH+i*(BLOCK_SIZE+3);
 		graph.draw_line(p1, p2, blanc, graph.get_Screen());
 	}
-	for (i=0; i<NB_ALL_BLOCKS; i++)
+	for (int i=0; i<NB_ALL_BLOCKS; i++)
 	{
 		position.x=2+WIDTH+((i%5)*(BLOCK_SIZE+3));
 		position.y=2+(BLOCK_SIZE+3)*(i/5);
@@ -282,7 +249,7 @@ void Editor::highlight_block(int type, Graphics &graph)
 	
 	p1.y=HEIGHT-2-(type/5)*(BLOCK_SIZE+3);
 	p2.y=p1.y-(BLOCK_SIZE+1);
-	graph.draw_rectangle(p1, p2, rouge, graph.get_Screen());
+	graph.draw_rectangle(p2, p1, rouge, graph.get_Screen());
 }
 
 /*
