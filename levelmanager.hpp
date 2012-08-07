@@ -2,6 +2,11 @@
 #define H_LEVEL
 #include "graphics.hpp"
 #include "constantes.hpp"
+#include <vector>
+#include <dirent.h>
+#ifndef WIN32
+	#include <sys/types.h>
+#endif
 //#include <string>
 
 //#define LINE_SIZE 2048
@@ -82,13 +87,16 @@ class LevelManager
 		SDL_Surface* get_Pacman_Texture(int n) {return pacman_texture[n];}
 		SDL_Surface* get_Ghosts_Texture(int n) {return ghosts_texture[n];}
 
+		std::string get_LevelName(int i) {return level_filename[i];}
+		int get_NbLevel() {return nb_level;}
+
 	private:
-		int nb_level;
+		int nb_level; //Nombre de niveaux total
 		SDL_Surface *wall_texture[NB_WALL_BLOCKS];
 		SDL_Surface *bonus_texture[NB_BONUS_BLOCKS];
 		SDL_Surface *pacman_texture[NB_PACMAN_BLOCK];
 		SDL_Surface *ghosts_texture[NB_GHOST_BLOCKS];
-		std::string level_filename[256];
+		std::vector<std::string> level_filename;
 };
 
 /*

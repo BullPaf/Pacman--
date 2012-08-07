@@ -30,6 +30,30 @@ Editor::Editor()
 }
 
 Editor::~Editor() {}
+
+void Editor::edit_menu(Menu &m)
+{
+	m.set_Title("MENU EDITEUR");
+	m.set_Option(0, "CONTINUER");
+	m.set_Option(1, "SAUVER");
+	m.set_Option(2, "CHARGER");
+	m.set_Option(3, "EFFACER");
+	m.set_Option(4, "TESTER");
+	m.set_Option(5, "QUITTER");
+	m.set_Available(4, false);
+}
+
+/*Le menu de séléction de fichier*/
+void Editor::file_menu(Menu &m, LevelManager &lvlmng)
+{
+	int i;
+	m.set_FontSize(25);
+	m.set_Space(30);
+	m.set_Title("Choississez un niveau");
+	for(i=0; i<m.get_OptionsSize()-1; i++) m.set_Option(i, lvlmng.get_LevelName(i));
+	m.set_Option(i, "Annuler");
+}
+
 /*
  * Met en place l'environement d'edition
  * il faut s'accrocher*/
@@ -45,10 +69,10 @@ void Editor::editer(Graphics &graph)
 	position.x=position.y=0;
 	int type=0, ok=1, message=AUCUN, tempsPrecedent=0, level=-1, selection=0;
 	LevelManager lvlmng;
+	Menu menu1(6);
 	Level mylevel;
 	Input in;
 	/*****************Fin Initialisation*****************/
-
 	while(ok)
 	{
 		in.UpdateEvents();
@@ -84,13 +108,14 @@ void Editor::editer(Graphics &graph)
 		/**************************FIN SOURIS*************************/
 
 		/**************************CLAVIER*************************/
-		/*if(in.key[SDLK_ESCAPE])
+		if(in.get_Key(SDLK_ESCAPE))
 		{
-			in.key[SDLK_ESCAPE]=0;
-			selection=edit_menu();
+			in.set_Key(SDLK_ESCAPE, 0);
+			edit_menu(menu1);
+			selection=menu1.draw_menu(graph);
 			if(selection==1) //sauver le niveau
 			{
-				int tmp = save_menu(level);
+				/*int tmp = save_menu(level);
 				if(tmp==0) //On ecrase le fichier en cours
 				{
 					save_level(level);
@@ -107,29 +132,32 @@ void Editor::editer(Graphics &graph)
 					level=NB_LEVEL-1; //Pour se rappeler on édite quel niveau maintenant
 					message=SAVE;
 					tempsPrecedent = SDL_GetTicks();
-				}
+				}*/
 			}
 			else if(selection == 2) //charger un niveau
 			{
-				level = select_file_menu();
-				if(level<NB_LEVEL)
+				std::cerr << lvlmng.get_NbLevel() << " Available" << std::endl;
+				Menu menu2(lvlmng.get_NbLevel()+1);
+				file_menu(menu2, lvlmng);
+				level = menu2.draw_menu(graph);
+				if(level<lvlmng.get_NbLevel())
 				{
-					load_level(level);
-					message=LOAD;
-					tempsPrecedent = SDL_GetTicks();
+					lvlmng.load_level(level, mylevel);
+					//message=LOAD;
+					//tempsPrecedent = SDL_GetTicks();
 				}
 			}
 			else if (selection == 3) //supprime tout
 			{
-				init_level();
+				/*init_level();
 				message=DELETE;
-				tempsPrecedent = SDL_GetTicks();
+				tempsPrecedent = SDL_GetTicks();*/
 			}
-			else if (selection == 5) return 0;
-		}*/
+			else if (selection == 5) return;
+		}
 		/**************************FIN CLAVIER*************************/
 
-		SDL_FillRect(graph.get_Screen(), NULL, SDL_MapRGB(graph.get_Screen()->format, 0, 0, 0));
+		SDL_FillRect(graph.get_Screen(), NULL, SDL_MapRGB((graph.get_Screen())->format, 0, 0, 0));
 		load_gui(graph, lvlmng); //Affiche l'interface
 		highlight_block(type, graph); //Encadre l'élément actif
 		lvlmng.draw_level(mylevel, graph); //Dessine le niveau

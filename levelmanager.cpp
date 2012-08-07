@@ -24,7 +24,7 @@ LevelManager::LevelManager()
 	{
 		num<<i;
 		img = "image/level/" + num.str() + ".png";
-		std::cerr << img.c_str() << std::endl;
+		//std::cerr << img.c_str() << std::endl;
 		if( (wall_texture[i] = IMG_Load(img.c_str())) == NULL)
 		{
 			std::cerr <<"Fatal Error..." << std::endl;
@@ -65,6 +65,27 @@ LevelManager::LevelManager()
 		}
 		num.str("");
 	}
+
+	DIR *dp = opendir(LEVEL_PATH);
+	if (dp) {
+		struct dirent *entry;
+		while ( (entry = readdir(dp)) ) {
+			if (strcmp(".", entry->d_name) == 0 || strcmp("..", entry->d_name) == 0)
+					continue;
+			else
+			{
+				level_filename.push_back(entry->d_name);
+				nb_level++;
+			}
+		}
+		closedir(dp);
+	}
+	/*FILE *cmp=fopen("data/campagne.txt", "r");
+	if(cmp != NULL)
+		while (fscanf(cmp, "%s", CAMPAGNE[CAMPAGNE_LEVEL]) != EOF) CAMPAGNE_LEVEL++;
+	else
+		fprintf(stderr, "Cant read campagne file, campagne won't be available\n");
+	fprintf(stderr, "%d Level in campagne\n", CAMPAGNE_LEVEL);*/
 }
 
 LevelManager::~LevelManager()

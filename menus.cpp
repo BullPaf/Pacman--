@@ -1,115 +1,94 @@
-#include "menus.h"
+#include "menus.hpp"
 
 /*Les parametres par defaut des menus*/
-void init_menu(Menu *menu, int nb)
+Menu::Menu(int nb)
 {
 	int i;
-	menu->options   = (char**)malloc(nb*sizeof(char*));
-	menu->couleur   = malloc(nb * sizeof(int));
-	menu->available = malloc(nb * sizeof(int));
-	menu->font_size=30; //Taille des caractères
-	menu->space=60; //espace entre les options
+	font_size=30; //Taille des caractères
+	space=60; //espace entre les options
 	/*Toutes les options sont selectionnables*/
 	for(i=0; i<nb; i++)
 	{
-		menu->couleur[i]   = blanc;
-		menu->available[i] = 1;
-		menu->options[i]   = malloc(64 * sizeof(char));
+		options.push_back("");
+		couleur.push_back(blanc);
+		available.push_back(true);
 	}
-	menu->img = IMG_Load("image/menu/menu.png"); //Le pacman pour montrer l'option selectionné
-	if(menu->img == NULL )
+	img = IMG_Load("image/menu/menu.png"); //Le pacman pour montrer l'option selectionné
+	if(img == NULL )
 	{
-		fprintf(stderr, "Erreur loading menu.png in >>init_menu()<<\n");
+		fprintf(stderr, "Erreur loading menu.png in >> Menu::Menu(int)<<\n");
 		exit(EXIT_FAILURE);
 	}
-	menu->nb_options = nb;
-	menu->selection=0;
+	nb_options = nb;
+	selection=0;
+}
+
+Menu::~Menu()
+{
+	free(img);
 }
 
 /*Rajouter le centrage des éléments
  * Vérifier que tout entre dans l'ecran
  * sinon réduire la police ou faire
  * des colonnes*/
-int draw_menu(Menu menu)
+int Menu::draw_menu(Graphics &g)
 {
 	int i;
 	Input in;
-	memset(&in,0,sizeof(in));
-	while(!menu.available[menu.selection]) menu.selection=(menu.selection+1)%(menu.nb_options);
-	for(i=0; i<menu.nb_options; i++) if(!menu.available[i]) menu.couleur[i]=gris;
-	while(!in.quit)
+	while(!available[selection]) selection=(selection+1)%(nb_options);
+	for(i=0; i<nb_options; i++) if(!available[i]) couleur[i]=gris;
+	while(!in.get_Quit())
 	{
-		menu.couleur[menu.selection]=blanc;
-		UpdateEvents(&in);
-		if(in.key[SDLK_RETURN])
+		couleur[selection]=blanc;
+		in.UpdateEvents();
+		if(in.get_Key(SDLK_RETURN))
 		{
-			in.key[SDLK_RETURN]=0;
-			return menu.selection;
+			in.set_Key(SDLK_RETURN, 0);
+			return selection;
 		}
-		else if(in.key[SDLK_DOWN])
+		else if(in.get_Key(SDLK_DOWN))
 		{
-			in.key[SDLK_DOWN]=0;
-			menu.selection=(menu.selection+1)%(menu.nb_options);
-			while(!menu.available[menu.selection]) menu.selection=(menu.selection+1)%(menu.nb_options);
+			in.set_Key(SDLK_DOWN, 0);
+			selection=(selection+1)%(nb_options);
+			while(!available[selection]) selection=(selection+1)%(nb_options);
 		}
-		else if(in.key[SDLK_UP])
+		else if(in.get_Key(SDLK_UP))
 		{
-			in.key[SDLK_UP]=0;
-			if(!(menu.selection)) menu.selection=menu.nb_options-1;
-			else menu.selection=(menu.selection-1)%(menu.nb_options);
-			while(!menu.available[menu.selection])
+			in.set_Key(SDLK_UP, 0);
+			if(!selection) selection=nb_options-1;
+			else selection=(selection-1)%(nb_options);
+			while(!available[selection])
 			{
-				if(!(menu.selection)) menu.selection=menu.nb_options-1;
-				else menu.selection=(menu.selection-1)%(menu.nb_options);
+				if(!selection) selection=nb_options-1;
+				else selection=(selection-1)%(nb_options);
 			}
 		}
-		SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
-		menu.couleur[menu.selection]=jaune;
-		menu.p1.x=100; menu.p1.y=25;
-		aff_pol(menu.title, 50, menu.p1, jaune);
-		menu.p1.x=300; menu.p1.y=100;
-		menu.pos.x=menu.p1.x-60;
-		menu.pos.y=menu.p1.y+(menu.selection*menu.space)-5;
-		SDL_BlitSurface(menu.img, NULL, screen, &(menu.pos));
-		for(i=0; i<menu.nb_options; i++)
+		SDL_FillRect(g.get_Screen(), NULL, SDL_MapRGB((g.get_Screen())->format, 0, 0, 0));
+		couleur[selection]=jaune;
+		p1.x=100; p1.y=25;
+		g.aff_pol(title, 50, p1, jaune, g.get_Screen());
+		p1.x=300; p1.y=100;
+		pos.x=p1.x-60;
+		pos.y=p1.y+(selection*space)-5;
+		SDL_BlitSurface(img, NULL, g.get_Screen(), &pos);
+		for(i=0; i<nb_options; i++)
 		{
-			aff_pol(menu.options[i], menu.font_size, menu.p1, menu.couleur[i]);
-			menu.p1.y=menu.p1.y+menu.space;
+			g.aff_pol(options[i], font_size, p1, couleur[i], g.get_Screen());
+			p1.y=p1.y+space;
 		}
-		SDL_Flip(screen);
+		SDL_Flip(g.get_Screen());
 	}
-	return menu.nb_options-1;
+	return nb_options-1;
 }
 
-/*Menu principal du jeu*/
-int main_menu()
-{
-	int nb=9;
-	Menu menu;
-	init_menu(&menu, nb);
-	strcpy(menu.title, "BIENVENUE DANS PACMAN!!");
-	strcpy(menu.options[0], "CAMPAGNE");
-	strcpy(menu.options[1], "EDIT CAMPAGNE");
-	strcpy(menu.options[2], "PARTIE UNIQUE");
-	strcpy(menu.options[3], "SURVIVOR");
-	strcpy(menu.options[4], "CHARGER");
-	strcpy(menu.options[5], "EDITER");
-	strcpy(menu.options[6], "OPTIONS");
-	strcpy(menu.options[7], "HIGH SCORE");
-	strcpy(menu.options[8], "QUITTER");
-	if(!has_saved_game()) menu.available[4]=0;
-	int selection = draw_menu(menu);
-	delete_menu(&menu);
-	return selection;
-}
-
-void edit_campagne()
+/*void edit_campagne()
 {
 	
-}
+}*/
 
 /*Quand on appuis echap lors d'une partie*/
-int game_menu()
+/*int game_menu()
 {
 	int nb = 3;
 	Menu menu;
@@ -122,10 +101,10 @@ int game_menu()
 	int selection = draw_menu(menu);
 	delete_menu(&menu);
 	return selection;
-}
+}*/
 
 /*Le menu de séléction de fichier*/
-int select_file_menu()
+/*int select_file_menu()
 {
 	int nb = NB_LEVEL, i;
 	Menu menu;
@@ -138,10 +117,10 @@ int select_file_menu()
 	int selection = draw_menu(menu);
 	delete_menu(&menu);
 	return selection;
-}
+}*/
 
-/*Loersque l'on appuie echap dans l'editeur*/
-int edit_menu()
+/*Lorsque l'on appuie echap dans l'editeur*/
+/*int edit_menu()
 {
 	int nb=6;
 	Menu menu;
@@ -157,9 +136,9 @@ int edit_menu()
 	int selection = draw_menu(menu);
 	delete_menu(&menu);
 	return selection;
-}
+}*/
 
-int save_menu(int level)
+/*int save_menu(int level)
 {
 	int nb=3;
 	Menu menu;
@@ -179,9 +158,9 @@ int save_menu(int level)
 	int selection = draw_menu(menu);
 	delete_menu(&menu);
 	return selection;
-}
+}*/
 
-void new_file_menu(char *new_file)
+/*void new_file_menu(char *new_file)
 {
 	POINT p1;
 	Input in;
@@ -200,11 +179,11 @@ void new_file_menu(char *new_file)
 		aff_pol(new_file, 30, p1, jaune);
 		SDL_Flip(screen);
 	}
-}
+}*/
 
 /*Affiche en début de niveau le niveau actuel
  * et un petit compteur de 3 sec*/
-void play_menu(int level)
+/*void play_menu(int level)
 {
 	char tmp[16], time[4];
 	POINT p1,p2;
@@ -222,13 +201,13 @@ void play_menu(int level)
 		SDL_Delay(1000);
 		counter--;
 	}
-}
+}*/
 
 /*Ceci est un menu special
  * Il ne suit pas les memes
  * regles que les autres menus
  * Accessoirement c'est tres moche*/
-void options_menu(config *cfg)
+/*void options_menu(config *cfg)
 {
 	config tmp = *cfg;
 	int i, j=0, nb=9, couleur[nb], available[nb], selection=0;
@@ -420,40 +399,40 @@ void options_menu(config *cfg)
 		}
 		SDL_Flip(screen);
 	}
-}
+}*/
 
 /*Quand tu gagnes*/
-void win_menu()
+/*void win_menu()
 {
 	POINT p1;
 	p1.x=200; p1.y=250;
 	aff_pol("YOU WON !", 75, p1, jaune);
 	SDL_Flip(screen);
 	SDL_Delay(3000);
-}
+}*/
 
 /*Quand tu perds*/
-void lost_menu()
+/*void lost_menu()
 {
 	POINT p1;
 	p1.x=200; p1.y=250;
 	aff_pol("YOU LOST !", 75, p1, jaune);
 	SDL_Flip(screen);
 	SDL_Delay(3000);
-}
+}*/
 
 /*Affiche la version du jeu*/
-void draw_version()
+/*void draw_version()
 {
 	POINT p1;
 	p1.x=EDIT_WIDTH-50; p1.y=EDIT_HEIGHT-30;
 	aff_pol(VERSION, 20, p1, jaune);
-}
+}*/
 
-void delete_menu(Menu *menu)
+/*void delete_menu(Menu *menu)
 {
 	free(menu->options);
 	free(menu->couleur);
 	free(menu->img);
 	free(menu->available);
-}
+}*/

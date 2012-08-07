@@ -1,7 +1,7 @@
 #ifndef H_EDITEUR
 #define H_EDITEUR
 #include "levelmanager.hpp"
-//#include "menus.h"
+#include "menus.hpp"
 
 enum {AUCUN, SAVE, LOAD, DELETE}; //Pour les messages de l'editeur
 
@@ -12,6 +12,8 @@ class Editor
 	public:
 		Editor();
 		~Editor();
+		void edit_menu(Menu&);
+		void file_menu(Menu&, LevelManager&);
 		void editer(Graphics&);
 		void load_gui(Graphics&, LevelManager&);
 		void init_editor();
