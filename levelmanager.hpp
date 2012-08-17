@@ -72,23 +72,29 @@ class LevelManager
 		void load_level(int, Level&);
 		void save_level(int, Level&);
 		void save_game(int);
+		void add_level(std::string);
 		int load_game();
 		bool has_saved_game();
 		void extract_val(const char*, int, Level&);
 		void draw_level(Level&, Graphics&);
 		void affiche_une_case(Case, SDL_Rect*, SDL_Surface*);
 		void remove_bloc(int, int, Level&);
+		void erase_level(Level&);
 		int remove_right_bloc(int);
 		int remove_left_bloc(int);
 		int remove_down_bloc(int);
 		int remove_up_bloc(int);
+		
+		//getters
 		SDL_Surface* get_Wall_Texture(int n) {return wall_texture[n];}
 		SDL_Surface* get_Bonus_Texture(int n) {return bonus_texture[n];}
 		SDL_Surface* get_Pacman_Texture(int n) {return pacman_texture[n];}
 		SDL_Surface* get_Ghosts_Texture(int n) {return ghosts_texture[n];}
-
 		std::string get_LevelName(int i) {return level_filename[i];}
 		int get_NbLevel() {return nb_level;}
+
+		//setters
+		void set_levelName(int n, std::string s) {level_filename[n] = s;}
 
 	private:
 		int nb_level; //Nombre de niveaux total

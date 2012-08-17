@@ -14,6 +14,8 @@ class Editor
 		~Editor();
 		void edit_menu(Menu&);
 		void file_menu(Menu&, LevelManager&);
+		void save_menu(Menu&, LevelManager&, int);
+		void new_file_menu(Graphics&, std::string&);
 		void editer(Graphics&);
 		void load_gui(Graphics&, LevelManager&);
 		void init_editor();

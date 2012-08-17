@@ -4,11 +4,6 @@
 
 void create_menu(Menu &m)
 {
-	if(m.get_OptionsSize() < 9)
-	{
-		std::cerr << "Error : Menu Error size... expected 9 but size is " << m.get_OptionsSize() << std::endl;
-		exit(EXIT_FAILURE);
-	}
 	m.set_Title("BIENVENUE DANS PACMAN!!");
 	m.set_Option(0, "CAMPAGNE");
 	m.set_Option(1, "EDIT CAMPAGNE");
@@ -19,10 +14,6 @@ void create_menu(Menu &m)
 	m.set_Option(6, "OPTIONS");
 	m.set_Option(7, "HIGH SCORE");
 	m.set_Option(8, "QUITTER");
-	//if(!has_saved_game()) menu.available[4]=0;
-	//int selection = draw_menu(menu);
-	//delete_menu(&menu);
-	//return selection;
 }
 
 int main(int argc, char **argv)

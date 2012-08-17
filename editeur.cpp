@@ -54,6 +54,39 @@ void Editor::file_menu(Menu &m, LevelManager &lvlmng)
 	m.set_Option(i, "Annuler");
 }
 
+void Editor::save_menu(Menu &m, LevelManager &lvlmng, int level)
+{
+	m.set_Title("SAVE MENU");
+	if(level>=0)
+		m.set_Option(0, lvlmng.get_LevelName(level));
+	else
+	{
+		m.set_Option(0, " ");
+		m.set_Available(0, false);
+	}
+	m.set_Option(1, "NEW FILE");
+	m.set_Option(2, "ANNULER");
+}
+
+void Editor::new_file_menu(Graphics &graph, std::string &new_file)
+{
+	SDL_Rect p1;
+	Input in;
+	while(!in.get_Quit())
+	{
+		in.UpdateEvents();
+		SDL_FillRect(graph.get_Screen(), NULL, SDL_MapRGB((graph.get_Screen())->format, 0, 0, 0));
+		if(in.get_Quit()) exit(EXIT_FAILURE);
+		if(in.get_Key(SDLK_RETURN)) return;
+		p1.x=100; p1.y=50;
+		graph.aff_pol("TYPE NEW LEVEL NAME", 50, p1, jaune, graph.get_Screen());
+		in.print_key(new_file, 32); //permet de taper le nom du niveau
+		p1.x=50; p1.y=200;
+		graph.aff_pol(new_file, 30, p1, jaune, graph.get_Screen());
+		SDL_Flip(graph.get_Screen());
+	}
+}
+
 /*
  * Met en place l'environement d'edition
  * il faut s'accrocher*/
@@ -115,28 +148,28 @@ void Editor::editer(Graphics &graph)
 			selection=menu1.draw_menu(graph);
 			if(selection==1) //sauver le niveau
 			{
-				/*int tmp = save_menu(level);
+				Menu menu3(3);
+				save_menu(menu3, lvlmng, level);
+				int tmp = menu3.draw_menu(graph);
 				if(tmp==0) //On ecrase le fichier en cours
 				{
-					save_level(level);
-					message=SAVE;
-					tempsPrecedent = SDL_GetTicks();
+					lvlmng.save_level(level, mylevel);
+					/*message=SAVE;
+					tempsPrecedent = SDL_GetTicks();*/
 				}
 				if(tmp==1) //On décide de créer un nouveau niveau
 				{
-					char new_file[64];
-					new_file_menu(new_file); //Taper le nom du niveau
-					strcpy(LEVEL_FILE[NB_LEVEL], new_file);
-					save_level(NB_LEVEL); //On le sauvegarde
-					NB_LEVEL++; //Un niveau de plus youpi
-					level=NB_LEVEL-1; //Pour se rappeler on édite quel niveau maintenant
-					message=SAVE;
-					tempsPrecedent = SDL_GetTicks();
-				}*/
+					std::string new_file;
+					new_file_menu(graph, new_file); //Taper le nom du niveau
+					lvlmng.add_level(new_file);
+					lvlmng.save_level(lvlmng.get_NbLevel()-1, mylevel); //On le sauvegarde
+					level=lvlmng.get_NbLevel()-1; //Pour se rappeler on édite quel niveau maintenant
+					/*message=SAVE;
+					tempsPrecedent = SDL_GetTicks();*/
+				}
 			}
 			else if(selection == 2) //charger un niveau
 			{
-				std::cerr << lvlmng.get_NbLevel() << " Available" << std::endl;
 				Menu menu2(lvlmng.get_NbLevel()+1);
 				file_menu(menu2, lvlmng);
 				level = menu2.draw_menu(graph);
@@ -149,8 +182,8 @@ void Editor::editer(Graphics &graph)
 			}
 			else if (selection == 3) //supprime tout
 			{
-				/*init_level();
-				message=DELETE;
+				lvlmng.erase_level(mylevel);
+				/*message=DELETE;
 				tempsPrecedent = SDL_GetTicks();*/
 			}
 			else if (selection == 5) return;

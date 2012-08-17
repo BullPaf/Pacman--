@@ -24,7 +24,6 @@ LevelManager::LevelManager()
 	{
 		num<<i;
 		img = "image/level/" + num.str() + ".png";
-		//std::cerr << img.c_str() << std::endl;
 		if( (wall_texture[i] = IMG_Load(img.c_str())) == NULL)
 		{
 			std::cerr <<"Fatal Error..." << std::endl;
@@ -396,6 +395,25 @@ void LevelManager::remove_bloc(int y, int x, Level &mylevel)
 				mylevel.set_EltType(y, x+1, remove_left_bloc(mylevel.get_EltType(y,x+1)));
 			break;
 	}
+}
+
+void LevelManager::erase_level(Level &lvl)
+{
+	for(int i=0; i<NB_BLOCKS_HAUTEUR; i++)
+	{
+		for(int j=0; j<NB_BLOCKS_LARGEUR; j++)
+		{
+			lvl.set_BlockType(i, j ,RIEN);
+		}
+	}
+	lvl.set_NbGhosts(0);
+	lvl.set_Dots(0);
+}
+
+void LevelManager::add_level(std::string s)
+{
+	level_filename.push_back(s);
+	nb_level++;
 }
 
 /*********Fonctions de remplacement des blocs**************/
